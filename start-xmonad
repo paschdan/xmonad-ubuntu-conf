@@ -38,7 +38,7 @@ xcompmgr -n &
 # Default icon slot size for tray icons...
 # We will adjust this parameter if necessary depending on the
 # screen we end up using, to avoid gaps between xmobar and stalonetray
-STALONETRAY_SLOT_SIZE=24
+STALONETRAY_SLOT_SIZE=18
 
 # We handle our screen configuration using xrandr. You are likely to want to 
 # edit this section to match the specific demands of your setup. The below
@@ -101,12 +101,12 @@ nitrogen --restore &
 #
 stalonetray \
   --icon-gravity E \
-  --geometry 5x1-0+0 \
-  --max-geometry 5x1-0+0 \
+  --geometry 6x1-0+0 \
+  --max-geometry 6x1-0+0 \
   --background '#000000' \
   --skip-taskbar \
-  --icon-size 24 \
-  --slot-size $STALONETRAY_SLOT_SIZE \
+  --icon-size 20 \
+  --slot-size 22 \
   --kludges force_icons_size \
   --window-strut none \
 &

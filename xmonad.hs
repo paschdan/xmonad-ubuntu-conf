@@ -19,6 +19,7 @@ import XMonad.Hooks.SetWMName
 import XMonad.Layout.Grid
 import XMonad.Layout.ResizableTile
 import XMonad.Layout.ThreeColumns
+import XMonad.Layout.IM as IM
 import XMonad.Layout.NoBorders
 import XMonad.Layout.Circle
 import XMonad.Layout.PerWorkspace (onWorkspace)
@@ -81,15 +82,9 @@ myUrgentWSRight = "}"
   as well.
 -}
 
-myWorkspaces =
-  [
-    "7:Chat",  "8:Dbg", "9:Pix",
-    "4:Docs",  "5:Dev", "6:Web",
-    "1:Term",  "2:Hub", "3:Mail",
-    "0:VM",    "Extr1", "Extr2"
-  ]
+myWorkspaces = ["1:Browser",  "2:Terminal", "3:Work", "4:Docs",  "5:Dev", "6:Web", "7:Outlook",  "8:Sky", "9:Chat" ]
 
-startupWorkspace = "5:Dev"  -- which workspace do you want to be on after launch?
+startupWorkspace = "1:Browser"  -- which workspace do you want to be on after launch?
 
 {-
   Layout configuration. In this section we identify which xmonad
@@ -157,11 +152,14 @@ chatLayout = avoidStruts(noBorders Full)
 -- can use single-window mode and avoid this issue.
 gimpLayout = smartBorders(avoidStruts(ThreeColMid 1 (3/100) (3/4)))
 
+-- skyLayout = smartBorders(avoidStruts(IM.withIM (1%6) (IM.And (IM.ClassName "Sky") (IM.Title "Sky")) Grid))
+skyLayout = smartBorders(avoidStruts(IM.withIM (1/6) (IM.Title "Sky") Grid))
+
 -- Here we combine our default layouts with our specific, workspace-locked
 -- layouts.
 myLayouts =
-  onWorkspace "7:Chat" chatLayout
-  $ onWorkspace "9:Pix" gimpLayout
+  onWorkspace "9:Chat" chatLayout
+  $ onWorkspace "8:Sky" skyLayout
   $ defaultLayouts
 
 
@@ -189,11 +187,16 @@ myLayouts =
   the output.
 -}
 
+altMask = mod1Mask
+
 myKeyBindings =
   [
     ((myModMask, xK_b), sendMessage ToggleStruts)
     , ((myModMask, xK_a), sendMessage MirrorShrink)
     , ((myModMask, xK_z), sendMessage MirrorExpand)
+    , ((myModMask, xK_l), spawn "gnome-screensaver-command -l")
+    , ((myModMask, xK_Escape), spawn "~/bin/layout_switch.sh")
+    , ((myModMask .|. shiftMask .|. altMask, xK_h         ), spawn "gksudo pm-hibernate")
     , ((myModMask, xK_p), spawn "synapse")
     , ((myModMask .|. mod1Mask, xK_space), spawn "synapse")
     , ((myModMask, xK_u), focusUrgent)
@@ -250,11 +253,20 @@ myManagementHooks :: [ManageHook]
 myManagementHooks = [
   resource =? "synapse" --> doIgnore
   , resource =? "stalonetray" --> doIgnore
-  , className =? "rdesktop" --> doFloat
-  , className =? "Gnome-calculator" --> doFloat
-  , (className =? "Slack") --> doF (W.shift "7:Chat")
-  , (className =? "Gimp-2.8") --> doF (W.shift "9:Pix")
+  , (className =? "Slack") --> doF (W.shift "9:Chat")
+  , (className =? "Sky") --> doF (W.shift "8:Sky")
+  , (resource =? "E-Mail – daniel.paschke@sap.com - Google Chrome") --> doF (W.shift "7:Outlook")
   ]
+
+myStartupHook = do
+  setWMName "LG3D"
+  windows $ W.greedyView startupWorkspace
+  spawn "~/.xmonad/startup-hook"
+  -- Focus the secons screen
+  screenWorkspace 1 >>= flip whenJust (windows . W.view)
+  windows $ W.greedyView "9:Chat"
+  screenWorkspace 0 >>= flip whenJust (windows . W.view)
+
 
 
 {-
@@ -293,24 +305,25 @@ numKeys =
 -- that we are telling xmonad how to navigate workspaces,
 -- how to send windows to different workspaces,
 -- and what keys to use to change which monitor is focused.
-myKeys = myKeyBindings ++
-  [
-    ((m .|. myModMask, k), windows $ f i)
-       | (i, k) <- zip myWorkspaces numPadKeys
-       , (f, m) <- [(W.greedyView, 0), (W.shift, shiftMask)]
-  ] ++
-  [
-    ((m .|. myModMask, k), windows $ f i)
-       | (i, k) <- zip myWorkspaces numKeys
-       , (f, m) <- [(W.greedyView, 0), (W.shift, shiftMask)]
-  ] ++
-  M.toList (planeKeys myModMask (Lines 4) Finite) ++
-  [
-    ((m .|. myModMask, key), screenWorkspace sc
-      >>= flip whenJust (windows . f))
-      | (key, sc) <- zip [xK_w, xK_e, xK_r] [1,0,2]
-      , (f, m) <- [(W.view, 0), (W.shift, shiftMask)]
-  ]
+myKeys = myKeyBindings
+--  ++
+--  [
+--    ((m .|. myModMask, k), windows $ f i)
+--       | (i, k) <- zip myWorkspaces numPadKeys
+--       , (f, m) <- [(W.view, 0), (W.shift, shiftMask)]
+--  ] ++
+--  [
+--    ((m .|. myModMask, k), windows $ f i)
+--       | (i, k) <- zip myWorkspaces numKeys
+--       , (f, m) <- [(W.view, 0), (W.shift, shiftMask)]
+--  ] ++
+--  M.toList (planeKeys myModMask (Lines 4) Finite) ++
+--  [
+--    ((m .|. myModMask, key), screenWorkspace sc
+--      >>= flip whenJust (windows . f))
+--      | (key, sc) <- zip [xK_w, xK_e, xK_r] [1,0,2]
+--      , (f, m) <- [(W.view, 0), (W.shift, shiftMask)]
+--  ]
 
 
 {-
@@ -330,10 +343,7 @@ main = do
   , workspaces = myWorkspaces
   , modMask = myModMask
   , handleEventHook = docksEventHook <+> fullscreenEventHook
-  , startupHook = do
-      setWMName "LG3D"
-      windows $ W.greedyView startupWorkspace
-      spawn "~/.xmonad/startup-hook"
+  , startupHook = myStartupHook
   , manageHook = manageHook def
       <+> composeAll myManagementHooks
       <+> manageDocks
